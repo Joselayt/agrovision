@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroVision | Diagnóstico Agrícola Inteligente</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            navy: '#0F172A', 
+                            orange: '#F97316',
+                            green: '#16A34A',
+                            lightBg: '#F8FAFC'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-brand-lightBg text-slate-800 flex flex-col min-h-screen font-sans">
+
+    <!-- Navegación -->
+    <nav class="bg-brand-navy text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Nombre del Proyecto -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-brand-green p-2 rounded-lg text-white font-bold">
+                        <i class="fa-solid fa-leaf text-xl"></i>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight">AgroVision <span class="text-brand-orange">AI</span></span>
+                </div>
+                <!-- Menú de Navegación -->
+                <div class="flex space-x-4">
+                    <button onclick="showTab('app')" id="tab-app-btn" class="px-3 py-2 rounded-md text-sm font-medium bg-brand-orange text-white hover:bg-orange-600 transition">
+                        <i class="fa-solid fa-microscope mr-1"></i> Diagnóstico
+                    </button>
+                    <button onclick="showTab('docs')" id="tab-docs-btn" class="px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-book-bookmark mr-1"></i> Documentación & Modelo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ================= VISTA 1: APLICACIÓN (DIAGNÓSTICO) ================= -->
+        <section id="view-app" class="space-y-8">
+            <!-- Header Hero -->
+            <div class="text-center space-y-2">
+                <h1 class="text-3xl font-extrabold text-brand-navy sm:text-4xl">Clasificación y Diagnóstico Foliar/Fruto</h1>
+                <p class="text-slate-600 max-w-2xl mx-auto">Sube una imagen de <strong>Manzana</strong> o <strong>Naranja</strong> para determinar el estado de madurez mediante visión por computadora.</p>
+            </div>
+
+            <!-- Grid de Carga y Resultados -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                
+                <!-- Tarjeta de Carga de Imagen -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-brand-orange"></i> Cargar Imagen
+                    </h2>
+                    
+                    <!-- Dropzone -->
+                    <div id="dropzone" onclick="document.getElementById('file-input').click();" class="border-2 border-dashed border-slate-300 hover:border-brand-green rounded-xl p-8 text-center cursor-pointer transition bg-slate-50 hover:bg-green-50/30 flex flex-col items-center justify-center min-h-[260px]">
+                        <input type="file" id="file-input" accept="image/*" class="hidden" onchange="previewImage(event)">
+                        
+                        <div id="upload-placeholder" class="space-y-3">
+                            <i class="fa-solid fa-image text-4xl text-slate-400"></i>
+                            <div>
+                                <p class="text-sm font-medium text-slate-700">Arrastra una imagen aquí o <span class="text-brand-green underline">explora tus archivos</span></p>
+                                <p class="text-xs text-slate-400 mt-1">Soporta PNG, JPG, JPEG (Máx. 10MB)</p>
+                            </div>
+                        </div>
+
+                        <!-- Previsualización -->
+                        <img id="image-preview" class="hidden max-h-60 rounded-lg object-contain shadow-sm border" alt="Vista previa de la muestra">
+                    </div>
+
+                    <!-- Botón de Envío -->
+                    <button id="btn-predict" onclick="sendToBackend()" disabled class="w-full bg-slate-300 text-slate-500 font-bold py-3 px-4 rounded-xl shadow cursor-not-allowed transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Analizar Muestra
+                    </button>
+                </div>
+
+                <!-- Tarjeta de Resultados -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 min-h-[380px] flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-chart-pie text-brand-green"></i> Resultado del Diagnóstico
+                        </h2>
+
+                        <!-- Estado Inicial / Placeholder -->
+                        <div id="result-placeholder" class="text-center py-12 text-slate-400 space-y-2">
+                            <i class="fa-solid fa-circle-nodes text-4xl animate-pulse"></i>
+                            <p>Carga una imagen y presiona "Analizar Muestra" para obtener el diagnóstico del modelo.</p>
+                        </div>
+
+                        <!-- Spinner de Carga -->
+                        <div id="loading-spinner" class="hidden text-center py-12 space-y-3">
+                            <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-brand-green border-t-transparent"></div>
+                            <p class="text-sm text-slate-600 font-medium">Procesando con la Red Neuronal...</p>
+                        </div>
+
+                        <!-- Contenedor de Resultado Final (Oculto inicialmente) -->
+                        <div id="result-content" class="hidden space-y-4">
+                            <div class="p-4 rounded-xl bg-green-50 border border-green-200 flex items-start gap-3">
+                                <i class="fa-solid fa-circle-check text-brand-green text-2xl mt-1"></i>
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-green-700">Predicción Principal</span>
+                                    <img id="mjpeg-stream" src="" alt="Resultado del modelo" class="rounded-lg shadow-md max-h-80 mx-auto border border-slate-800">
+                                    <h3 id="res-label" class="text-2xl font-black text-brand-navy">Manzana - Sarna (Apple Scab)</h3>
+                                </div>
+                            </div>
+
+                            <!-- Barra de Confianza -->
+                            <div class="space-y-1">
+                                <div class="flex justify-between text-sm font-semibold">
+                                    <span class="text-slate-600">Nivel de Confianza (Score):</span>
+                                    <span id="res-confidence" class="text-brand-orange">96.8%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                    <div id="confidence-bar" class="bg-brand-orange h-3 rounded-full" style="width: 96.8%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Recomendación Técnica -->
+                            <div class="border-t pt-3">
+                                <h4 class="text-sm font-bold text-brand-navy mb-1"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> Recomendación Agrónoma:</h4>
+                                <p id="res-recommendation" class="text-xs text-slate-600 leading-relaxed">
+                                    Aplicar un fungicida a base de cobre durante el periodo de brotación. Asegurar una buena poda para favorecer la circulación de aire en el follaje.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-400 border-t pt-3 text-center">
+                        Modelo de Visión Computacional, si desea mas informacion acerca del proyecto visite la: <a href="https://github.com/joselayt/agrovision.git"  target="_blank" class="text-brand-orange underline font-semibold">REPO</a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- ================= VISTA 2: DOCUMENTACIÓN & EVIDENCIA AI ================= -->
+        <section id="view-docs" class="hidden space-y-8">
+            <!-- Header de la Documentación -->
+            <div class="bg-brand-navy text-white p-6 rounded-2xl shadow-md space-y-2">
+                <span class="text-brand-orange font-bold text-xs uppercase tracking-wider">Documentación Técnica</span>
+                <h1 class="text-2xl sm:text-3xl font-extrabold">Arquitectura del Modelo & Dataset</h1>
+                <p class="text-slate-300 text-sm max-w-3xl">Detalles técnicos sobre el entrenamiento, métricas de rendimiento y datasets empleados para la clasificación agrícola de manzanas y naranjas.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Columna Izquierda: Gráficos de Matplotlib & Resumen -->
+                <div class="lg:col-col-span-2 lg:col-span-2 space-y-6">
+                    <!-- Gráfico de Entrenamiento (Matplotlib Export) -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                        <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-brand-green"></i> Curvas de Entrenamiento (Loss & Accuracy)
+                        </h2>
+                        <p class="text-xs text-slate-500">Visualización generada con Matplotlib durante el entrenamiento de 50 épocas con Early Stopping.</p>
+                        
+                        <!-- Imagen de Matplotlib -->
+                        <div class="border rounded-xl p-2 bg-slate-50 flex justify-center">
+                            <img src="{{ url_for('static', filename='img-training-1.png') }}" alt="Gráfico de Matplotlib del entrenamiento del modelo" class="rounded-lg max-h-80 object-contain">
+                        </div>
+                    </div>
+
+                    <!-- Detalles del Modelo -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <h2 class="text-lg font-bold text-brand-navy">Resumen de la Arquitectura</h2>
+                        <ul class="list-disc list-inside text-sm text-slate-600 space-y-2">
+                            <li><strong>Pipeline de Preprocesamiento:</strong> Data Augmentation (deteccion de frutas, recorte, colores por hsv, area, perimetro).</li>
+                            <li><strong>Transfer Learning:</strong> Torch.</li>
+                            <li><strong>Optimizador:</strong> Adam (Learning Rate = 0.00001).</li>
+                            <li><strong>Precisión (Accuracy) Global:</strong> <span class="text-brand-green font-bold">83.0%</span> en el conjunto de testeo.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Descarga de Datasets y Enlaces -->
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                        <h2 class="text-lg font-bold text-brand-navy flex items-center gap-2">
+                            <i class="fa-solid fa-database text-brand-orange"></i> Replicar / Mejorar
+                        </h2>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Descarga los archivos `.csv, .pt, .gz` con los metadatos, etiquetas y división de conjuntos (Train/Val/Test), incluido el modelo y el decoder para reproducir los experimentos.
+                        </p>
+                        
+                        <!-- Botones de Descarga CSV -->
+                        <div class="space-y-2 pt-2">
+                            <a href="/zbdhfioñsd-erghie5lidebvhulueis/sdfrgbesdfbgdesdataset_test" class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-brand-green hover:bg-green-50/50 transition text-xs font-semibold text-slate-700">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-file-csv text-brand-green text-lg"></i> dataset_test.csv
+                                </span>
+                                <i class="fa-solid fa-download text-slate-400"></i>
+                            </a>
+                            <a href="/zbdhfioñsd-erghie5lidebvhulueis/sdfrgbesdfbgdesdataset_train" class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-brand-orange hover:bg-orange-50/50 transition text-xs font-semibold text-slate-700">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-file-csv text-brand-orange text-lg"></i> dataset_train.csv
+                                </span>
+                                <i class="fa-solid fa-download text-slate-400"></i>
+                            </a>
+                            <a href="/zbdhfioñsd-erghie5lidebvhulueis/sdfrgbesdfbgdesmodel" class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-brand-orange hover:bg-orange-50/50 transition text-xs font-semibold text-slate-700">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid ">🤖</i> Control-Calidad.pt (model NETWORK NEURAL)
+                                </span>
+                                <i class="fa-solid fa-download text-slate-400"></i>
+                            </a>
+                            <a href="/zbdhfioñsd-erghie5lidebvhulueis/sdfrgbesdfbgdesencoder" class="flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-brand-orange hover:bg-orange-50/50 transition text-xs font-semibold text-slate-700">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid ">𝌰</i> Encoder.gz
+                                </span>
+                                <i class="fa-solid fa-download text-slate-400"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+
+                    <!-- Badge de evidencia profesional -->
+                    <div class="bg-gradient-to-br from-brand-navy to-slate-800 text-white p-6 rounded-2xl space-y-3">
+                        <i class="fa-solid fa-award text-3xl text-brand-orange"></i>
+                        <h3 class="font-bold text-base">Proyecto AI Portfolio</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">Este modelo fue diseñado como evidencia de capacidades en visión por computadora aplicada a la agricultura de precisión.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-brand-navy text-slate-300 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                
+                <!-- Columna 1: Info General -->
+                <div class="space-y-2">
+                    <h4 class="text-white font-bold text-base flex items-center gap-2">
+                        <i class="fa-solid fa-brain text-brand-green"></i> AgroVision Portfolio
+                    </h4>
+                    <p class="text-xs text-slate-400">Solución Machine Learning para diagnóstico de frutas en tiempo real.</p>
+                </div>
+
+                <!-- Columna 2: Contacto -->
+                <div class="space-y-2">
+                    <h4 class="text-white font-bold text-base">Contacto Profesional</h4>
+                    <ul class="space-y-1 text-xs">
+                        <li><a href="https://wa.me/+240222159272" target="_blank" class="hover:text-brand-green transition"><i class="fa-brands fa-whatsapp text-brand-green mr-2"></i> WhatsApp: +240 222 159 272</a></li>
+                        <li><a href="tel:+240222159272" class="hover:text-slate-100 transition"><i class="fa-solid fa-phone mr-2 text-slate-400"></i> Teléfono: +240222159272</a></li>
+                        <li><a href="mailto:joselaytebana@gmail.com" class="hover:text-slate-100 transition"><i class="fa-solid fa-envelope mr-2 text-slate-400"></i> Email: joselaytebana@gmail.com</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Enlaces / Perfil -->
+                <div class="space-y-2 md:text-right">
+                    <h4 class="text-white font-bold text-base">Enlaces</h4>
+                    <div class="flex md:justify-end gap-3 text-lg pt-1">
+                        <a href="https://github.com/joselayt" target="_blank" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-brand-orange hover:text-white transition"><i class="fa-brands fa-github"></i></a>
+                        <a href="https://joselayt.pages.dev" target="_blank" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center hover:bg-brand-green hover:text-white transition"><i class="fa-solid fa-globe"></i></a>
+                    </div>
+                    <p class="text-xs text-slate-400 pt-1">Visita mi <a href="https://joselayt.pages.dev" target="_blank" class="text-brand-orange underline font-semibold">Sitio Web Profesional</a></p>
+                </div>
+
+            </div>
+
+            <div class="border-t border-slate-800 mt-6 pt-4 text-center text-xs text-slate-500">
+                &copy; 2026 Desarrollado para portafolio de Ciencia de Datos & AI.
+            </div>
+        </div>
+    </footer>
+
+
+    <script>
+
+        function showTab(tabName) {
+            const viewApp = document.getElementById('view-app');
+            const viewDocs = document.getElementById('view-docs');
+            const btnApp = document.getElementById('tab-app-btn');
+            const btnDocs = document.getElementById('tab-docs-btn');
+
+            if (tabName === 'app') {
+                viewApp.classList.remove('hidden');
+                viewDocs.classList.add('hidden');
+                btnApp.className = "px-3 py-2 rounded-md text-sm font-medium bg-brand-orange text-white hover:bg-orange-600 transition";
+                btnDocs.className = "px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition";
+            } else {
+                viewApp.classList.add('hidden');
+                viewDocs.classList.remove('hidden');
+                btnDocs.className = "px-3 py-2 rounded-md text-sm font-medium bg-brand-orange text-white hover:bg-orange-600 transition";
+                btnApp.className = "px-3 py-2 rounded-md text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition";
+            }
+        }
+
+        let selectedFile = null;
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('image-preview');
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    document.getElementById('upload-placeholder').classList.add('hidden');
+                    
+                    // Activar Botón
+                    const btn = document.getElementById('btn-predict');
+                    btn.disabled = false;
+                    btn.className = "w-full bg-brand-green hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow cursor-pointer transition flex items-center justify-center gap-2";
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+
+        const BACKEND_URL = '/zbdhfioñsd-erghie5lidebvhulueis';
+
+        async function sendToBackend() {
+        if (!selectedFile) return;
+
+        const placeholder = document.getElementById('result-placeholder');
+        const spinner = document.getElementById('loading-spinner');
+        const resultContent = document.getElementById('result-content');
+        const streamImg = document.getElementById('mjpeg-stream');
+
+        placeholder.classList.add('hidden');
+        resultContent.classList.add('hidden');
+        spinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        try {
+            const response = await fetch(BACKEND_URL, {
+            method: 'POST',
+            body: formData,
+            });
+
+            if (!response.ok)
+            throw new Error(`Error en el servidor: ${response.statusText}`);
+
+            // Parsear la respuesta JSON
+            const data = await response.json();
+
+            // 1. Mostrar los metadatos y detalles en la interfaz HTML
+            document.getElementById('res-label').innerText = data.label;
+            document.getElementById('res-confidence').innerText =
+                (data.confidence * 100).toFixed(1) + '%';
+            document.getElementById('confidence-bar').style.width =
+                data.confidence * 100 + '%';
+            document.getElementById('res-recommendation').innerText =
+                data.recommendation;
+
+            // 2. Cargar la imagen procesada desde la propiedad Base64
+            streamImg.src = `data:image/jpeg;base64,${data.image_base64}`;
+
+            spinner.classList.add('hidden');
+            resultContent.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error al procesar la predicción:', error);
+            spinner.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            alert('Ocurrió un error al procesar la imagen.');
+        }
+        }
+            setTimeout(() => {
+                spinner.classList.add('hidden');
+                resultContent.classList.remove('hidden');
+            }, 1500);
+        
+    </script>
+</body>
+</html>
