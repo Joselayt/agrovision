@@ -4,7 +4,6 @@ import torch
 
 # my model
 from detection import Detection
-from ultralytics import YOLO
 
 
 # servidor
@@ -72,4 +71,4 @@ def descarga(ar):
         )
 
 
-app.run(host="0.0.0.0")
+app.run(host="0.0.0.0", port=5000)
