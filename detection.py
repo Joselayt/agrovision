@@ -9,7 +9,7 @@ import pandas  as pd
 
 
 
-model_path = "/home/lyane/Desktop/models/yolov8m.pt"
+model_path = "./models/yolov8m.pt"
 model = YOLO(model_path)
 
 
