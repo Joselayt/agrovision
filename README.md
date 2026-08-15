@@ -1,4 +1,3 @@
-Aquí tienes una documentación profesional, completa y estructurada del proyecto basada exactamente en tu script de PyTorch (training.py). Está diseñada en formato **Markdown** para que puedas copiarla directamente en un archivo README.md de tu repositorio de GitHub, Notion o en la vista de documentación de tu interfaz web.
 
 # **🌿 AgroVision AI — Control de Calidad Agrícola**
 
